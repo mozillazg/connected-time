@@ -5,6 +5,8 @@ import time
 import urllib2
 import sqlite3
 
+# 记录上网时长，并将数据写入到数据库
+
 # 插入数据
 def insert_data(xcurs, start_time, end_time, total_time):
     sql = 'INSERT INTO time VALUES (?, ?, ?, ?)'
@@ -14,8 +16,8 @@ def insert_data(xcurs, start_time, end_time, total_time):
 # 查询总上网时长
 def query_sum(xcurs):
     xcurs.execute('select sum(totaltime) as total from time')
-    #total = # 获取'total'的值
-    #return total
+    total = cur.fetchone()['total']# 获取'total'的值
+    return total
 
 url = 'http://www.baidu.com/favicon.ico'
 # 模拟浏览器
@@ -23,8 +25,10 @@ user_agent = 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) \
                             Gecko/20100101 Firefox/4.0.1'
 headers = { 'User-Agent' : user_agent }
 request = urllib2.Request(url=url, headers=headers)
-
-conn = sqlite3.connect('totals.db')  # 连接数据库
+# TODO 一个文件夹(如果不存在则创建)保存数据库文件
+# 每个月一个数据库(e.g. 2011_05.db)
+dbfile = time.strftime('%Y_%m',time.localtime()) + '.db' 
+conn = sqlite3.connect(dbfile)  # 连接数据库
 curs = conn.cursor()  # 获取游标
 isconnected = False  # 网络连接状态
 starttime = endtime = None
@@ -67,7 +71,9 @@ while True:
                 ''')
                 
                 insert_data(curs, starttime, endtime, totaltime)
-            conn.commit()  # 提交数据
+                total_month = query_sum(xcurs)
+                conn.commit()  # 提交数据
+                print '当月总上网时间：' , total_month
             # pass
             isconnected = False # 标记连接状态为断开
     else:
