@@ -5,16 +5,17 @@ import time
 import urllib2
 import sqlite3
 
-isconnected = False
-starttime = endtime = None
-
-
+# 插入数据
 def insert_data(xcurs, start_time, end_time, total_time):
-    query = 'INSERT INTO time(id, starttime, endtime,  totaltime) \
-             VALUES (%s, %s, %s, %s)' % (
-             start_time, start_time, end_time, total_time)
-    xcurs.execute(query) # 执行 SQL 语句
+    sql = 'INSERT INTO time VALUES (?, ?, ?, ?)'
+    values = (start_time, start_time, end_time, total_time)
+    xcurs.execute(sql, values) # 执行 SQL 语句
 
+# 查询总上网时长
+def query_sum(xcurs):
+    xcurs.execute('select sum(totaltime) as total from time')
+    #total = # 获取'total'的值
+    #return total
 
 url = 'http://www.baidu.com/favicon.ico'
 # 模拟浏览器
@@ -25,29 +26,28 @@ request = urllib2.Request(url=url, headers=headers)
 
 conn = sqlite3.connect('totals.db')  # 连接数据库
 curs = conn.cursor()  # 获取游标
-sleep_time = 60 #每次循环的间隔(秒)
+isconnected = False  # 网络连接状态
+starttime = endtime = None
+sleep_time = 6 # 每次循环的间隔(秒)
 counts = 0
 
 while True:
     print 'start'
     try:
-        u = urllib2.urlopen(request)
+        urllib2.urlopen(request)
     except:
         print 'error'
         print isconnected
         if isconnected: # 连接第一次断开
             endtime = time.time()
             print endtime
-            totaltime = (endtime - starttime + 
-                                    sleep_time * counts)/60.0 #以1分钟为单位计时
+            totaltime = (endtime - starttime)/60.0 #以1分钟为单位计时
             if totaltime%1 > 0:
-                totaltime = int(totaltime) + 1
+                totaltime = int(totaltime) + 1 # 结果舍弃秒数，秒入为分
             print totaltime
-            # 写入文件/数据库
-            # write(starttime, endtime, totaltime) # 结果舍弃秒数，秒入为分
-            starttime = time.strftime('%Y/%m/%d %H:%M',
+            starttime = time.strftime('%Y/%m/%d %H:%M:%S',
                                 time.localtime(starttime)) #格式化日期
-            endtime = time.strftime('%Y/%m/%d %H:%M',
+            endtime = time.strftime('%Y/%m/%d %H:%M:%S',
                                 time.localtime(endtime)) # 格式化日期
             print starttime
             print endtime
