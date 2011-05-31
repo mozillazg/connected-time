@@ -3,46 +3,67 @@
 
 import time
 import urllib2
+import ConfigParser
 import sqlite3
 
 # 记录上网时长，并将数据写入到数据库
 
 # 插入数据
-def insert_data(xcurs, start_time, end_time, total_time):
+def insert_data(xcur, start_time, end_time, total_time):
     sql = 'INSERT INTO time VALUES (?, ?, ?, ?)'
     values = (start_time, start_time, end_time, total_time)
-    xcurs.execute(sql, values) # 执行 SQL 语句
+    xcur.execute(sql, values) # 执行 SQL 语句
 
 # 查询总上网时长
-def query_sum(xcurs):
-    xcurs.execute('select sum(totaltime) as total from time')
-    total = cur.fetchone()['total']# 获取'total'的值
+def query_sum(xcur):
+    xcur.execute('select sum(totaltime) as total from time')
+    total = xcur.fetchone()[0] # 获取单一结果集
     return total
 
-url = 'http://www.baidu.com/favicon.ico'
+# 设置默认配置
+def default_config( configs, configfile):
+    configs.add_section('General')
+    configs.set('General', 'URL', 'http://www.baidu.com/favicon.ico')
+    with open(configfile, 'wb') as config_file:
+        configs.write(config_file)
+        config_file.close()
+
+CONFIGFILE = 'config.ini'  # 配置文件名称
+config = ConfigParser.RawConfigParser()
+
+while True:
+    try:
+        config.read(CONFIGFILE)
+        url = config.get('General', 'URL').decode('utf-8')
+    except:
+        default_config(config, CONFIGFILE)
+    else:
+        break
+
 # 模拟浏览器
 user_agent = 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) \
                             Gecko/20100101 Firefox/4.0.1'
 headers = { 'User-Agent' : user_agent }
 request = urllib2.Request(url=url, headers=headers)
-# TODO 一个文件夹(如果不存在则创建)保存数据库文件
+# dbfolder = 'DB' 一个文件夹(如果不存在则创建)保存数据库文件
+# if not os.path.exists(dbfolder):
+#    os.mkdir(dbfolder)
+# dbfile = dbfolder + time.strftime('%Y_%m',time.localtime()) + '.db' 
+
 # 每个月一个数据库(e.g. 2011_05.db)
 dbfile = time.strftime('%Y_%m',time.localtime()) + '.db' 
-conn = sqlite3.connect(dbfile)  # 连接数据库
-curs = conn.cursor()  # 获取游标
 isconnected = False  # 网络连接状态
 starttime = endtime = None
 sleep_time = 6 # 每次循环的间隔(秒)
-counts = 0
 
 while True:
-    print 'start'
     try:
         urllib2.urlopen(request)
-    except:
-        print 'error'
+    except Exception, e:
+        print e
         print isconnected
         if isconnected: # 连接第一次断开
+            print 'end'
             endtime = time.time()
             print endtime
             totaltime = (endtime - starttime)/60.0 #以1分钟为单位计时
@@ -55,38 +76,39 @@ while True:
                                 time.localtime(endtime)) # 格式化日期
             print starttime
             print endtime
-            try:
-                insert_data(curs, starttime, endtime, totaltime)
-            except Exception, e:
-                print e
-            #except:
-                # 建表
-                curs.execute('''
-                CREATE TABLE time (
-                        id                TEXT        PRIMARY KEY,
-                        starttime         FLOAT,
-                        endtime          FLOAT,
-                        totaltime       FLOAT
-                )
-                ''')
-                
-                insert_data(curs, starttime, endtime, totaltime)
-                total_month = query_sum(xcurs)
-                conn.commit()  # 提交数据
-                print '当月总上网时间：' , total_month
+            while True:
+                try:
+                    conn = sqlite3.connect(dbfile)  # 连接数据库
+                    cur = conn.cursor()  # 获取游标
+                    insert_data(cur, starttime, endtime, totaltime)
+                    total_month = query_sum(cur)
+                except Exception, e:
+                    print e
+                    # 建表
+                    cur.execute('''
+                    CREATE TABLE time (
+                            id                TEXT        PRIMARY KEY,
+                            starttime         FLOAT,
+                            endtime          FLOAT,
+                            totaltime       FLOAT
+                    )
+                    ''')
+                else:
+                    break
+                finally:
+                    conn.commit()  # 提交挂起的事务
+                    cur.close()
+                    conn.close() # 断开数据库连接
+            print '当月总上网时间：%s 分钟' % total_month
             # pass
             isconnected = False # 标记连接状态为断开
     else:
-        print 'ok'
+        # print 'ok'
         if not isconnected: # 第一次连接
+            print 'start'
             starttime = time.time()
             print starttime
             isconnected = True
             print isconnected
-            counts = 0
             # pass
-    print 'end'
     time.sleep(sleep_time) # 每过一段时间(秒)循环一次
-    counts += 1
-
-conn.close()
