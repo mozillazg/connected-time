@@ -10,8 +10,8 @@ import sqlite3
 
 # 插入数据
 def insert_data(xcur, start_time, end_time, total_time):
-    sql = 'INSERT INTO time VALUES (?, ?, ?, ?)'
-    values = (start_time, start_time, end_time, total_time)
+    sql = 'INSERT INTO time(starttime, endtime, totaltime) VALUES (?, ?, ?)'
+    values = (start_time, end_time, total_time)
     xcur.execute(sql, values) # 执行 SQL 语句
 
 # 查询总上网时长
@@ -66,7 +66,7 @@ while True:
         if isconnected: # 连接第一次断开
             print 'end'
             endtime = time.time()
-            print endtime
+            # print endtime
             totaltime = (endtime - starttime)/60.0 #以1分钟为单位计时
             if totaltime%1 > 0:
                 totaltime = int(totaltime) + 1 # 结果舍弃秒数，秒入为分
@@ -84,14 +84,14 @@ while True:
                     insert_data(cur, starttime, endtime, totaltime) # 插入数据
                     total_month = query_sum(cur) # 获取当月中上网时间
                 except Exception, e:
-                    print e
+                    # print e
                     # 建表
                     cur.execute('''
                     CREATE TABLE time (
-                            id                TEXT        PRIMARY KEY,
-                            starttime         FLOAT,
-                            endtime          FLOAT,
-                            totaltime       FLOAT
+                      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+                      starttime TEXT,
+                      endtime   TEXT,
+                      totaltime REAL
                     )
                     ''')
                 else:
@@ -108,7 +108,7 @@ while True:
         if not isconnected: # 第一次连接
             print 'start'
             starttime = time.time()
-            print starttime
+            # print starttime
             isconnected = True
             # print isconnected
             # pass
