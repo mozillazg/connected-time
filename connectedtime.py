@@ -31,6 +31,7 @@ def default_config( configs, configfile):
 CONFIGFILE = 'config.ini'  # 配置文件名称
 config = ConfigParser.RawConfigParser()
 
+# 获取配置文件中 URL 的值
 while True:
     try:
         config.read(CONFIGFILE)
@@ -54,14 +55,14 @@ request = urllib2.Request(url=url, headers=headers)
 dbfile = time.strftime('%Y_%m',time.localtime()) + '.db' 
 isconnected = False  # 网络连接状态
 starttime = endtime = None
-sleep_time = 6 # 每次循环的间隔(秒)
+sleep_time = 30 # 每次循环的间隔(秒)
 
 while True:
     try:
         urllib2.urlopen(request)
     except Exception, e:
         print e
-        print isconnected
+        # print isconnected
         if isconnected: # 连接第一次断开
             print 'end'
             endtime = time.time()
@@ -80,8 +81,8 @@ while True:
                 try:
                     conn = sqlite3.connect(dbfile)  # 连接数据库
                     cur = conn.cursor()  # 获取游标
-                    insert_data(cur, starttime, endtime, totaltime)
-                    total_month = query_sum(cur)
+                    insert_data(cur, starttime, endtime, totaltime) # 插入数据
+                    total_month = query_sum(cur) # 获取当月中上网时间
                 except Exception, e:
                     print e
                     # 建表
@@ -97,8 +98,8 @@ while True:
                     break
                 finally:
                     conn.commit()  # 提交挂起的事务
-                    cur.close()
-                    conn.close() # 断开数据库连接
+                    cur.close() # 关闭游标
+                    conn.close() # 关闭数据库连接
             print '当月总上网时间：%s 分钟' % total_month
             # pass
             isconnected = False # 标记连接状态为断开
@@ -109,6 +110,6 @@ while True:
             starttime = time.time()
             print starttime
             isconnected = True
-            print isconnected
+            # print isconnected
             # pass
     time.sleep(sleep_time) # 每过一段时间(秒)循环一次
