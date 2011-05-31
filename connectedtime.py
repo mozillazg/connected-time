@@ -100,7 +100,7 @@ while True:
                     conn.commit()  # 提交挂起的事务
                     cur.close() # 关闭游标
                     conn.close() # 关闭数据库连接
-            print u'当月总上网时间：%s 分钟（%0.2s 小时）' % (total_month, total_month/60.0)
+            print u'当月总上网时间：%s 分钟（%.2f 小时）' % (total_month, total_month/60.0)
             # pass
             isconnected = False # 标记连接状态为断开
     else:
