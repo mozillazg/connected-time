@@ -55,13 +55,13 @@ request = urllib2.Request(url=url, headers=headers)
 dbfile = time.strftime('%Y_%m',time.localtime()) + '.db' 
 isconnected = False  # 网络连接状态
 starttime = endtime = None
-sleep_time = 30 # 每次循环的间隔(秒)
+sleep_time = 60 # 每次循环的间隔(秒)
 
 while True:
     try:
         urllib2.urlopen(request)
-    except Exception, e:
-        print e
+    except:# Exception, e:
+        # print e
         # print isconnected
         if isconnected: # 连接第一次断开
             print 'end'
@@ -83,7 +83,7 @@ while True:
                     cur = conn.cursor()  # 获取游标
                     insert_data(cur, starttime, endtime, totaltime) # 插入数据
                     total_month = query_sum(cur) # 获取当月中上网时间
-                except Exception, e:
+                except:# Exception, e:
                     # print e
                     # 建表
                     cur.execute('''
