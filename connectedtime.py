@@ -55,7 +55,7 @@ request = urllib2.Request(url=url, headers=headers)
 dbfile = time.strftime('%Y_%m',time.localtime()) + '.db' 
 isconnected = False  # 网络连接状态
 starttime = endtime = None
-sleep_time = 60 # 每次循环的间隔(秒)
+sleep_time = 30 # 每次循环的间隔(秒)
 
 while True:
     try:
@@ -64,19 +64,13 @@ while True:
         # print e
         # print isconnected
         if isconnected: # 连接第一次断开
-            print 'end'
             endtime = time.time()
-            # print endtime
+            print 'end: %s' % time.strftime('%Y/%m/%d %H:%M:%S',
+                                time.localtime(endtime))
             totaltime = (endtime - starttime)/60.0 #以1分钟为单位计时
             if totaltime%1 > 0:
                 totaltime = int(totaltime) + 1 # 结果舍弃秒数，秒入为分
-            print totaltime
-            starttime = time.strftime('%Y/%m/%d %H:%M:%S',
-                                time.localtime(starttime)) #格式化日期
-            endtime = time.strftime('%Y/%m/%d %H:%M:%S',
-                                time.localtime(endtime)) # 格式化日期
-            print starttime
-            print endtime
+            print 'total: %sm' % totaltime
             while True:
                 try:
                     conn = sqlite3.connect(dbfile)  # 连接数据库
@@ -106,10 +100,13 @@ while True:
     else:
         # print 'ok'
         if not isconnected: # 第一次连接
-            print 'start'
             starttime = time.time()
-            # print starttime
+            print 'start: %s' % time.strftime('%Y/%m/%d %H:%M:%S',
+                                time.localtime(starttime))
             isconnected = True
             # print isconnected
             # pass
     time.sleep(sleep_time) # 每过一段时间(秒)循环一次
+
+# TODO
+# if __name__ == '__main__':
