@@ -48,7 +48,7 @@ headers = { 'User-Agent' : user_agent }
 request = urllib2.Request(url=url, headers=headers)
 # dbfolder = 'DB' 一个文件夹(如果不存在则创建)保存数据库文件
 # if not os.path.exists(dbfolder):
-#    os.mkdir(dbfolder)
+#    os.makedirs(dbfolder)
 # dbfile = dbfolder + time.strftime('%Y_%m',time.localtime()) + '.db' 
 
 # 每个月一个数据库(e.g. 2011_05.db)
