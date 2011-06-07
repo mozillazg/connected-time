@@ -34,6 +34,7 @@ def default_config( configs, configfile):
         configs.write(config_file)
         config_file.close()
 
+# 计算总上网时长
 def total(start, end):
     totaltime = (end - start)/60.0 #以1分钟为单位计时
     if totaltime%1 > 0:
@@ -68,21 +69,6 @@ def main():
     sleep_time = 30 # 每次循环的间隔(秒)
     conn = cur = None
 
-    try:
-        conn = sqlite3.connect(dbfile)  # 连接数据库
-        cur = conn.cursor()  # 获取游标
-    except:# Exception, e:
-        # print e
-        # 建表
-        cur.execute('''
-        CREATE TABLE time (
-          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
-          starttime TEXT,
-          endtime   TEXT,
-          totaltime REAL
-        )
-        ''')
-        
     format_time = lambda s : time.strftime('%Y/%m/%d %H:%M:%S', 
                                 time.localtime(s))
 
@@ -98,9 +84,9 @@ def main():
                 print 'end: %s' % end
                 totaltime = total(starttime, endtime)
                 print 'total: %sm' % totaltime
+                conn = sqlite3.connect(dbfile)  # 连接数据库
+                cur = conn.cursor()  # 获取游标
                 try:
-                    conn = sqlite3.connect(dbfile)  # 连接数据库
-                    cur = conn.cursor()  # 获取游标
                     update_data(cur, start, end, totaltime) # 更新数据
                     total_month = query_sum(cur) # 获取当月总上网时间
                 except Exception, e:
@@ -121,12 +107,22 @@ def main():
                 isconnected = True
                 endtime = 'None'
                 totaltime = 0.0
+                conn = sqlite3.connect(dbfile)  # 连接数据库
+                cur = conn.cursor()  # 获取游标
                 try:
-                    conn = sqlite3.connect(dbfile)  # 连接数据库
-                    cur = conn.cursor()  # 获取游标
                     insert_data(cur, start, endtime, totaltime)
                 except Exception, e:
                     print e
+                    # 建表
+                    cur.execute('''
+                      CREATE TABLE time (
+                      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+                      starttime TEXT,
+                      endtime   TEXT,
+                      totaltime REAL
+                      )
+                    ''')
+                    insert_data(cur, start, endtime, totaltime)
                 finally:
                     conn.commit()  # 提交挂起的事务
                     cur.close() # 关闭游标
@@ -137,9 +133,9 @@ def main():
                 endtime = time.time()
                 end = format_time(endtime)
                 totaltime = total(starttime, endtime)
+                conn = sqlite3.connect(dbfile)  # 连接数据库
+                cur = conn.cursor()  # 获取游标
                 try:
-                    conn = sqlite3.connect(dbfile)  # 连接数据库
-                    cur = conn.cursor()  # 获取游标
                     update_data(cur, start, end, totaltime)
                 except Exception, e:
                     print e
